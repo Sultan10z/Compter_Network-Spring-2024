@@ -22,8 +22,8 @@ public class Server {
         List<String> validEmails = loadValidEmails();
 
         try {
-            // Create a DatagramSocket bound to port 12345
-            serverSocket = new DatagramSocket(12345);
+            // Create a DatagramSocket bound to port 25
+            serverSocket = new DatagramSocket(25);
             byte[] receiveData = new byte[1024];
 
             // Display server initialization message
@@ -41,6 +41,8 @@ public class Server {
 
                 // Count number of bytes in the message the client sent
                 int bytesCount = message.getBytes().length;
+                System.out.println("\n=================================================================================\n\n");
+
                 System.out.println("Bytes in the message: " + bytesCount);
 
                 // Extract email content and header fields and split them into parts for easier validation
@@ -104,7 +106,7 @@ public class Server {
                     System.out.println("TIME: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEE. MMM d, yyyy HH:mm")));
                     System.out.println("\n\n" + body);
                     System.out.println("\n---------------------------------------------------------------------------------");
-                    System.out.println("\n\n");
+                    System.out.println("\n");
 
                     // Send confirmation response to client with timestamp
                     String timestamp = LocalDateTime.now().toString();
@@ -122,7 +124,7 @@ public class Server {
                     System.out.println("TIME: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEE. MMM d, yyyy HH:mm")));
                     System.out.println("\n\n" + body);
                     System.out.println("\n---------------------------------------------------------------------------------");
-                    System.out.println("\n\n");
+                    System.out.println("\n");
 
                     // Send error response for invalid header or emails
                     response = "501 Error";
