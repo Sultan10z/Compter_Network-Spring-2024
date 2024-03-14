@@ -10,9 +10,11 @@ import java.util.Map;
 public class Server {
     private static final String EMAIL_FILE = "emails.txt"; // File containing valid email addresses
     private static final String EMAILS_DIRECTORY = "emails"; // Base directory to save email files
+    private static final String MAPPING_FILE = "mapping.txt"; // File containing mappings from email addresses to receiver client hostnames
 
     // Map to keep track of client directories
     private static Map<String, String> clientDirectories = new HashMap<>();
+    private static Map<String, String> emailToReceiverMapping = new HashMap<>();
 
     public static void main(String[] args) {
         DatagramSocket serverSocket = null;
@@ -20,6 +22,9 @@ public class Server {
 
         // Load valid email addresses from file
         List<String> validEmails = loadValidEmails();
+
+        // Load email-to-receiver mappings from file
+        loadEmailToReceiverMapping();
 
         try {
             // Create a DatagramSocket bound to port 25
@@ -92,6 +97,8 @@ public class Server {
                         writer.println("SUBJECT: " + subject);
                         writer.println("TIME: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEE. MMM d, yyyy HH:mm")));
                         writer.println("\n\n" + body);
+
+
                     } catch (IOException e) {
                         e.printStackTrace();
                         response = "File Saving Error"; // Notify client about file saving error
@@ -114,6 +121,16 @@ public class Server {
 
                     System.out.println("The Header fields and both 'To' and 'From' emails are valid.");
                     System.out.println("\nSending '250 OK'");
+
+                    // Check if the receiver client is mapped and forward the email
+                    if (emailToReceiverMapping.containsKey(to)) {
+                        String receiverHostname = emailToReceiverMapping.get(to);
+                        InetAddress receiverAddress = InetAddress.getByName(receiverHostname);
+                        int receiverPort = 12345; // Assuming port 12345 for receiver clients
+
+                        // Send email to receiver client
+                        sendEmailToReceiver(filename, to, from, subject, body, receiverAddress, receiverPort);
+                    }
                 } else {
                     // Show the email's details in the server terminal
                     System.out.println("\n---------------------------------------------------------------------------------\n");
@@ -177,6 +194,23 @@ public class Server {
         return validEmails;
     }
 
+    // Method to load email-to-receiver mappings from file
+    private static void loadEmailToReceiverMapping() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(MAPPING_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":");
+                if (parts.length == 2) {
+                    String receiverEmail = parts[0].trim();
+                    String receiverHostname = parts[1].trim();
+                    emailToReceiverMapping.put(receiverEmail, receiverHostname);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     // Method to get client directory or create new if it doesn't exist
     private static String getClientDirectory(String clientHostname) {
         // Check if client directory already exists, if not, create it
@@ -192,4 +226,23 @@ public class Server {
     private static String generateUniqueFilename(String clientDirectory) {
         return clientDirectory + "/email_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + ".txt";
     }
+
+    // Method to send email to receiver client
+    private static void sendEmailToReceiver(String filename, String to, String from, String subject, String body, InetAddress receiverAddress, int receiverPort) {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            // Construct email message
+            String email = "To: " + to + "\nFrom: " + from + "\nSubject: " + subject + "\n\n" + body;
+            byte[] sendData = email.getBytes();
+
+            // Send email to receiver client
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, receiverAddress, receiverPort);
+            socket.send(sendPacket);
+
+            System.out.println("Email forwarded to Receiver Client:");
+            System.out.println("Forwarded to: " + receiverAddress.getHostAddress());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

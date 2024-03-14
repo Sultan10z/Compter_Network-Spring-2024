@@ -4,6 +4,10 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64; // Add this import
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Client {
     public static void main(String[] args) {
@@ -86,8 +90,35 @@ public class Client {
                     }
                 }
 
-                // Construct email message in save it in 'email' String
+                // Ask user if they want to attach a file
+                System.out.print("Do you want to attach a file? (yes/no): ");
+                String attachChoice = scanner.nextLine().trim().toLowerCase();
+                String attachmentPath = null;
+                if (attachChoice.equals("yes")) {
+                    System.out.print("Enter file path to attach: ");
+                    attachmentPath = scanner.nextLine().trim();
+                    // Validate file existence
+                    if (!Files.exists(Paths.get(attachmentPath))) {
+                        System.out.println("Error: File not found.");
+                        continue; // Restart the loop to ask for attachment again
+                    }
+                }
+
+                // Construct email message with attachment
                 String email = "To: " + to + "\nFrom: " + from + "\nSubject: " + subject + "\n\n" + body;
+                if (attachmentPath != null) {
+                    try {
+                        // Read attachment file as bytes
+                        byte[] attachmentData = Files.readAllBytes(Paths.get(attachmentPath));
+                        // Encode attachment data as Base64 string and append to email
+                        String attachmentEncoded = Base64.getEncoder().encodeToString(attachmentData);
+                        email += "\nAttachment: " + attachmentEncoded; // Append attachment to email
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        continue; // Restart the loop to ask for attachment again
+                    }
+                }
+
                 // Store the email in 'request' String
                 String request = email;
                 // Count number of bytes in the message with the headers title (ex:to,from...etc)
