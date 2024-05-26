@@ -15,8 +15,6 @@ This repository contains the implementation of project for the Computer Networks
 7. [Protocol Details](#protocol-details)
 8. [Testing](#testing)
 9. [Troubleshooting](#troubleshooting)
-10. [Contributors](#contributors)
-11. [Acknowledgments](#acknowledgments)
 
 ---
 
